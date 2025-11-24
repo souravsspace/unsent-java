@@ -17,7 +17,7 @@ Add this dependency to your `pom.xml`:
 <dependency>
     <groupId>dev.unsent</groupId>
     <artifactId>unsent-java</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 ```
 
@@ -26,7 +26,7 @@ Add this dependency to your `pom.xml`:
 Add this to your `build.gradle`:
 
 ```gradle
-implementation 'dev.unsent:unsent-java:1.0.0'
+implementation 'dev.unsent:unsent-java:1.0.1'
 ```
 
 ### From Source
@@ -152,6 +152,20 @@ List<EmailRequest> emails = Arrays.asList(
 
 List<EmailResponse> responses = client.emails.batch(emails);
 System.out.println("Sent " + responses.size() + " emails");
+```
+
+#### Idempotent Retries
+
+To prevent duplicate emails when retrying failed requests, you can provide an idempotency key.
+
+```java
+import java.util.HashMap;
+import java.util.Map;
+
+Map<String, String> options = new HashMap<>();
+options.put("idempotencyKey", "unique-key-123");
+
+EmailResponse response = client.emails.send(request, options);
 ```
 
 ### Managing Emails

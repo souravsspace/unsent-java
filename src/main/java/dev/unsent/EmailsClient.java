@@ -1,6 +1,10 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 public class EmailsClient {
     private final UnsentClient client;
@@ -10,15 +14,35 @@ public class EmailsClient {
     }
     
     public UnsentResponse send(Object payload) throws UnsentException {
-        return create(payload);
+        return create(payload, null);
+    }
+
+    public UnsentResponse send(Object payload, Map<String, String> options) throws UnsentException {
+        return create(payload, options);
     }
     
     public UnsentResponse create(Object payload) throws UnsentException {
-        return client.post("/emails", payload);
+        return create(payload, null);
+    }
+
+    public UnsentResponse create(Object payload, Map<String, String> options) throws UnsentException {
+        return client.post("/emails", normalizePayload(payload), extractHeaders(options));
     }
     
     public UnsentResponse batch(Object emails) throws UnsentException {
-        return client.post("/emails/batch", emails);
+        return batch(emails, null);
+    }
+
+    public UnsentResponse batch(Object emails, Map<String, String> options) throws UnsentException {
+        if (emails instanceof List) {
+            List<?> list = (List<?>) emails;
+            List<Object> normalized = new ArrayList<>();
+            for (Object item : list) {
+                normalized.add(normalizePayload(item));
+            }
+            return client.post("/emails/batch", normalized, extractHeaders(options));
+        }
+        return client.post("/emails/batch", emails, extractHeaders(options));
     }
     
     public UnsentResponse get(String emailId) throws UnsentException {
@@ -31,5 +55,34 @@ public class EmailsClient {
     
     public UnsentResponse cancel(String emailId) throws UnsentException {
         return client.post("/emails/" + emailId + "/cancel", new Object());
+    }
+
+    private Map<String, String> extractHeaders(Map<String, String> options) {
+        if (options == null) {
+            return null;
+        }
+        Map<String, String> headers = new HashMap<>();
+        if (options.containsKey("idempotencyKey")) {
+            headers.put("Idempotency-Key", options.get("idempotencyKey"));
+        }
+        // Add other options as headers if needed, or just pass through if they are already headers
+        for (Map.Entry<String, String> entry : options.entrySet()) {
+            if (!entry.getKey().equals("idempotencyKey")) {
+                headers.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return headers;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object normalizePayload(Object payload) {
+        if (payload instanceof Map) {
+            Map<String, Object> map = new HashMap<>((Map<String, Object>) payload);
+            if (map.containsKey("from_") && !map.containsKey("from")) {
+                map.put("from", map.remove("from_"));
+            }
+            return map;
+        }
+        return payload;
     }
 }
