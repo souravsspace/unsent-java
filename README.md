@@ -45,7 +45,7 @@ mvn install
 import dev.unsent.UnsentClient;
 
 // Initialize with API key
-UnsentClient client = new UnsentClient("us_12345");
+UnsentClient client = new UnsentClient("un_xxxx");
 ```
 
 ### Environment Variables
@@ -335,10 +335,10 @@ try {
 
 ```java
 // Custom base URL
-UnsentClient client = new UnsentClient("us_12345", "https://api.unsent.dev", true);
+UnsentClient client = new UnsentClient("un_xxxx", "https://api.unsent.dev", true);
 
 // Don't raise exceptions (check response status manually)
-UnsentClient client = new UnsentClient("us_12345", null, false);
+UnsentClient client = new UnsentClient("un_xxxx", null, false);
 ```
 
 ## API Reference
