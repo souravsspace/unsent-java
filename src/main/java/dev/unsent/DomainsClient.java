@@ -1,6 +1,7 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
+import dev.unsent.types.DomainCreate;
 
 public class DomainsClient {
     private final UnsentClient client;
@@ -14,6 +15,10 @@ public class DomainsClient {
     }
     
     public UnsentResponse create(Object payload) throws UnsentException {
+        return client.post("/domains", payload);
+    }
+
+    public UnsentResponse create(DomainCreate payload) throws UnsentException {
         return client.post("/domains", payload);
     }
     

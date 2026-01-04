@@ -1,6 +1,7 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
+import dev.unsent.types.EmailCreate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -17,7 +18,15 @@ public class EmailsClient {
         return create(payload, null);
     }
 
+    public UnsentResponse send(EmailCreate payload) throws UnsentException {
+        return create(payload, null);
+    }
+
     public UnsentResponse send(Object payload, Map<String, String> options) throws UnsentException {
+        return create(payload, options);
+    }
+
+    public UnsentResponse send(EmailCreate payload, Map<String, String> options) throws UnsentException {
         return create(payload, options);
     }
     
@@ -25,8 +34,16 @@ public class EmailsClient {
         return create(payload, null);
     }
 
+    public UnsentResponse create(EmailCreate payload) throws UnsentException {
+        return create(payload, null);
+    }
+
     public UnsentResponse create(Object payload, Map<String, String> options) throws UnsentException {
         return client.post("/emails", normalizePayload(payload), extractHeaders(options));
+    }
+
+    public UnsentResponse create(EmailCreate payload, Map<String, String> options) throws UnsentException {
+        return client.post("/emails", payload, extractHeaders(options));
     }
     
     public UnsentResponse batch(Object emails) throws UnsentException {

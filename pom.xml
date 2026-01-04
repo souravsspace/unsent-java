@@ -4,7 +4,7 @@
   <groupId>dev.unsent</groupId>
   <artifactId>unsent-java</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <name>Unsent Java SDK</name>
   <description>Official Java SDK for the Unsent API - Send transactional emails with ease</description>
   <url>https://unsent.dev</url>

@@ -1,6 +1,7 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
+import dev.unsent.types.CampaignCreate;
 
 public class CampaignsClient {
     private final UnsentClient client;
@@ -10,6 +11,10 @@ public class CampaignsClient {
     }
     
     public UnsentResponse create(Object payload) throws UnsentException {
+        return client.post("/campaigns", payload);
+    }
+
+    public UnsentResponse create(CampaignCreate payload) throws UnsentException {
         return client.post("/campaigns", payload);
     }
     
