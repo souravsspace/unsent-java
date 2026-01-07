@@ -1,7 +1,7 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
-import dev.unsent.types.EmailCreate;
+import dev.unsent.types.SendEmailRequest; // Depending on how generator handled AnyOf, might be needed
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -14,11 +14,13 @@ public class EmailsClient {
         this.client = client;
     }
     
+    // --- Send Email ---
+
     public UnsentResponse send(Object payload) throws UnsentException {
         return create(payload, null);
     }
 
-    public UnsentResponse send(EmailCreate payload) throws UnsentException {
+    public UnsentResponse send(SendEmailRequest payload) throws UnsentException {
         return create(payload, null);
     }
 
@@ -26,7 +28,7 @@ public class EmailsClient {
         return create(payload, options);
     }
 
-    public UnsentResponse send(EmailCreate payload, Map<String, String> options) throws UnsentException {
+    public UnsentResponse send(SendEmailRequest payload, Map<String, String> options) throws UnsentException {
         return create(payload, options);
     }
     
@@ -34,7 +36,7 @@ public class EmailsClient {
         return create(payload, null);
     }
 
-    public UnsentResponse create(EmailCreate payload) throws UnsentException {
+    public UnsentResponse create(SendEmailRequest payload) throws UnsentException {
         return create(payload, null);
     }
 
@@ -42,26 +44,47 @@ public class EmailsClient {
         return client.post("/emails", normalizePayload(payload), extractHeaders(options));
     }
 
-    public UnsentResponse create(EmailCreate payload, Map<String, String> options) throws UnsentException {
+    public UnsentResponse create(SendEmailRequest payload, Map<String, String> options) throws UnsentException {
         return client.post("/emails", payload, extractHeaders(options));
     }
     
-    public UnsentResponse batch(Object emails) throws UnsentException {
+    // --- Batch ---
+
+    public UnsentResponse batch(List<?> emails) throws UnsentException {
         return batch(emails, null);
     }
 
-    public UnsentResponse batch(Object emails, Map<String, String> options) throws UnsentException {
-        if (emails instanceof List) {
-            List<?> list = (List<?>) emails;
-            List<Object> normalized = new ArrayList<>();
-            for (Object item : list) {
-                normalized.add(normalizePayload(item));
-            }
-            return client.post("/emails/batch", normalized, extractHeaders(options));
+    public UnsentResponse batch(List<?> emails, Map<String, String> options) throws UnsentException {
+        // Simple normalization if it's a list of Objects (Maps)
+        List<Object> normalized = new ArrayList<>();
+        for (Object item : emails) {
+            normalized.add(normalizePayload(item));
         }
-        return client.post("/emails/batch", emails, extractHeaders(options));
+        return client.post("/emails/batch", normalized, extractHeaders(options));
     }
     
+    // --- Operations ---
+
+    public UnsentResponse list() throws UnsentException {
+        return list(null, null, null, null, null);
+    }
+    
+    public UnsentResponse list(Integer page, Integer limit) throws UnsentException {
+        return list(page, limit, null, null, null);
+    }
+
+    public UnsentResponse list(Integer page, Integer limit, String startDate, String endDate, String domainId) throws UnsentException {
+        String query = "";
+        if (page != null) query += "page=" + page + "&";
+        if (limit != null) query += "limit=" + limit + "&";
+        if (startDate != null) query += "startDate=" + startDate + "&";
+        if (endDate != null) query += "endDate=" + endDate + "&";
+        if (domainId != null) query += "domainId=" + domainId + "&";
+        if (!query.isEmpty()) query = "?" + query.substring(0, query.length() - 1);
+        
+        return client.get("/emails" + query);
+    }
+
     public UnsentResponse get(String emailId) throws UnsentException {
         return client.get("/emails/" + emailId);
     }
@@ -72,6 +95,30 @@ public class EmailsClient {
     
     public UnsentResponse cancel(String emailId) throws UnsentException {
         return client.post("/emails/" + emailId + "/cancel", new Object());
+    }
+
+    // --- Analytics / Lists ---
+
+    public UnsentResponse getBounces(Integer page, Integer limit) throws UnsentException {
+        String query = buildPaginationQuery(page, limit);
+        return client.get("/emails/bounces" + query);
+    }
+
+    public UnsentResponse getComplaints(Integer page, Integer limit) throws UnsentException {
+        String query = buildPaginationQuery(page, limit);
+        return client.get("/emails/complaints" + query);
+    }
+
+    public UnsentResponse getUnsubscribes(Integer page, Integer limit) throws UnsentException {
+        String query = buildPaginationQuery(page, limit);
+        return client.get("/emails/unsubscribes" + query);
+    }
+
+    private String buildPaginationQuery(Integer page, Integer limit) {
+        String query = "";
+        if (page != null) query += "page=" + page + "&";
+        if (limit != null) query += "limit=" + limit + "&";
+        return query.isEmpty() ? "" : "?" + query.substring(0, query.length() - 1);
     }
 
     private Map<String, String> extractHeaders(Map<String, String> options) {

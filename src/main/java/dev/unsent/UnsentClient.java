@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 public class UnsentClient {
@@ -24,6 +23,14 @@ public class UnsentClient {
     public final ContactsClient contacts;
     public final CampaignsClient campaigns;
     public final DomainsClient domains;
+    public final TemplatesClient templates;
+    public final ContactBooksClient contactBooks;
+    public final SuppressionsClient suppressions;
+    public final ApiKeysClient apiKeys;
+    public final AnalyticsClient analytics;
+    public final SettingsClient settings;
+    public final WebhooksClient webhooks;
+    public final SystemClient system;
     
     public UnsentClient(String apiKey) {
         this(apiKey, null, true);
@@ -50,6 +57,14 @@ public class UnsentClient {
         this.contacts = new ContactsClient(this);
         this.campaigns = new CampaignsClient(this);
         this.domains = new DomainsClient(this);
+        this.templates = new TemplatesClient(this);
+        this.contactBooks = new ContactBooksClient(this);
+        this.suppressions = new SuppressionsClient(this);
+        this.apiKeys = new ApiKeysClient(this);
+        this.analytics = new AnalyticsClient(this);
+        this.settings = new SettingsClient(this);
+        this.webhooks = new WebhooksClient(this);
+        this.system = new SystemClient(this);
     }
     
     public UnsentResponse request(String method, String path, Object body) throws UnsentException {

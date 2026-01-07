@@ -1,425 +1,154 @@
 # Unsent Java SDK
 
+The official Java SDK for the [Unsent.dev](https://unsent.dev) API.
+
 ## Prerequisites
 
 - [Unsent API key](https://app.unsent.dev/dev-settings/api-keys)
 - [Verified domain](https://app.unsent.dev/domains)
 - Java 11 or higher
-- Maven 3.6+ or Gradle 7+
+- Maven 3.6+
 
 ## Installation
 
 ### Maven
 
-Add this dependency to your `pom.xml`:
+Add the following dependency to your `pom.xml`:
 
 ```xml
 <dependency>
     <groupId>dev.unsent</groupId>
     <artifactId>unsent-java</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
-```
-
-### Gradle
-
-Add this to your `build.gradle`:
-
-```gradle
-implementation 'dev.unsent:unsent-java:1.0.1'
-```
-
-### From Source
-
-```bash
-git clone https://github.com/souravsspace/unsent-java.git
-cd unsent-java
-mvn install
 ```
 
 ## Usage
 
-### Basic Setup
+### Initialization
 
 ```java
 import dev.unsent.UnsentClient;
 
 // Initialize with API key
 UnsentClient client = new UnsentClient("un_xxxx");
-```
 
-### Environment Variables
-
-You can also set your API key using environment variables:
-
-```java
-// Set UNSENT_API_KEY environment variable
-// Then initialize without passing the key
+// Or use environment variable UNSENT_API_KEY
 UnsentClient client = new UnsentClient();
 ```
 
-### Sending Emails
-
-#### Simple Email
+### Emails
 
 ```java
-import dev.unsent.models.EmailRequest;
-import dev.unsent.responses.EmailResponse;
+import dev.unsent.types.SendEmailRequest;
+import dev.unsent.types.SendEmailRequestTo;
 
-EmailRequest request = new EmailRequest(
-    "hello@acme.com",
-    "hello@company.com", 
-    "Unsent email",
-    "<p>Unsent is the best email service provider to send emails</p>",
-    "Unsent is the best email service provider to send emails"
-);
+// Send an email
+SendEmailRequest email = new SendEmailRequest()
+    .to(new SendEmailRequestTo("user@example.com"))
+    .from("noreply@yourdomain.com")
+    .subject("Welcome to Unsent")
+    .html("<strong>Hello!</strong>");
 
-try {
-    EmailResponse response = client.emails.send(request);
-    System.out.println("Email sent! ID: " + response.getId());
-} catch (UnsentException e) {
-    System.err.println("Error: " + e.getMessage());
-}
+client.emails.send(email);
+
+// Send with options (e.g. idempotency key)
+client.emails.send(email, Map.of("idempotencyKey", "unique-key-123"));
+
+// Batch sending
+List<SendEmailRequest> batch = List.of(email1, email2);
+client.emails.batch(batch);
+
+// Get email details
+client.emails.get("email_id");
+
+// List emails
+client.emails.list(1, 10);
 ```
 
-#### Email with Attachments
+### Contacts & Contact Books
 
 ```java
-import dev.unsent.models.Attachment;
-import java.util.Arrays;
+import dev.unsent.types.CreateContactBookRequest;
+import dev.unsent.types.CreateContactRequest;
+
+// Create Contact Book
+CreateContactBookRequest bookReq = new CreateContactBookRequest().name("Newsletter");
+client.contactBooks.create(bookReq);
+
+// Create Contact in Book
+CreateContactRequest contact = new CreateContactRequest()
+    .email("user@example.com")
+    .firstName("John")
+    .lastName("Doe");
+
+client.contacts.create("contact_book_id", contact);
+
+// List Contacts
+client.contacts.list("contact_book_id");
+```
+
+### Campaigns
+
+```java
+import dev.unsent.types.CreateCampaignRequest;
+
+CreateCampaignRequest campaign = new CreateCampaignRequest()
+    .name("Weekly Newsletter")
+    .subject("Your Weekly Update")
+    .contactBookId("contact_book_id")
+    .html("<p>Here is your update...</p>");
+
+// Create Campaign
+client.campaigns.create(campaign);
+
+// Schedule Campaign
+client.campaigns.schedule("campaign_id", new ScheduleCampaignRequest().scheduledAt("tomorrow 9am"));
+```
+
+### Domains
+
+```java
+import dev.unsent.types.CreateDomainRequest;
+
+// Create Domain
+client.domains.create(new CreateDomainRequest().name("example.com"));
+
+// Verify Domain
+client.domains.verify("domain_id");
+
+// List Domains
+client.domains.list();
+```
+
+### Helper Clients
+
+The SDK provides access to all Unsent resources:
+
+- `client.templates` - Manage email templates
+- `client.suppressions` - Manage suppression lists
+- `client.apiKeys` - Manage API keys programmatically
+- `client.analytics` - internal analytics
+- `client.settings` - internal settings
+- `client.system` - System health check
+
+### Webhooks (Future Feature)
+
+> **Note**: Webhooks are currently a roadmap feature and may not be fully supported by the API yet.
+
+```java
 import java.util.List;
 
-List<Attachment> attachments = Arrays.asList(
-    new Attachment("document.pdf", "base64-encoded-content-here")
-);
+String webhookUrl = "https://your-domain.com/webhooks/unsent";
+List<String> events = List.of("email.sent", "email.delivered");
 
-EmailRequest request = new EmailRequest(
-    "hello@acme.com",
-    "hello@company.com",
-    "Email with attachment", 
-    "<p>Please find the attachment below</p>",
-    null,
-    attachments
-);
+// Create a webhook
+client.webhooks.create(webhookUrl, events);
 
-EmailResponse response = client.emails.send(request);
+// List webhooks
+client.webhooks.list();
 ```
-
-#### Scheduled Email
-
-```java
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
-// Schedule for 1 hour from now
-Instant scheduledTime = Instant.now().plus(1, ChronoUnit.HOURS);
-
-EmailRequest request = new EmailRequest(
-    "hello@acme.com",
-    "hello@company.com",
-    "Scheduled email",
-    "<p>This email was scheduled</p>",
-    null,
-    null,
-    scheduledTime.toString()
-);
-
-EmailResponse response = client.emails.send(request);
-```
-
-#### Batch Emails
-
-```java
-import java.util.Arrays;
-import java.util.List;
-
-List<EmailRequest> emails = Arrays.asList(
-    new EmailRequest(
-        "user1@example.com",
-        "hello@company.com",
-        "Hello User 1",
-        "<p>Welcome User 1</p>",
-        null
-    ),
-    new EmailRequest(
-        "user2@example.com", 
-        "hello@company.com",
-        "Hello User 2",
-        "<p>Welcome User 2</p>",
-        null
-    )
-);
-
-List<EmailResponse> responses = client.emails.batch(emails);
-System.out.println("Sent " + responses.size() + " emails");
-```
-
-#### Idempotent Retries
-
-To prevent duplicate emails when retrying failed requests, you can provide an idempotency key.
-
-```java
-import java.util.HashMap;
-import java.util.Map;
-
-Map<String, String> options = new HashMap<>();
-options.put("idempotencyKey", "unique-key-123");
-
-EmailResponse response = client.emails.send(request, options);
-```
-
-### Managing Emails
-
-#### Get Email Details
-
-```java
-try {
-    EmailResponse email = client.emails.get("email_id");
-    System.out.println("Email status: " + email.getStatus());
-} catch (UnsentException e) {
-    System.err.println("Error: " + e.getMessage());
-}
-```
-
-#### Update Email
-
-```java
-EmailRequest updateRequest = new EmailRequest(
-    null, null, "Updated subject", "<p>Updated content</p>", null
-);
-
-EmailResponse updated = client.emails.update("email_id", updateRequest);
-```
-
-#### Cancel Scheduled Email
-
-```java
-try {
-    client.emails.cancel("email_id");
-    System.out.println("Email cancelled successfully");
-} catch (UnsentException e) {
-    System.err.println("Error: " + e.getMessage());
-}
-```
-
-### Managing Contacts
-
-#### Create Contact
-
-```java
-import dev.unsent.models.ContactRequest;
-import java.util.HashMap;
-import java.util.Map;
-
-Map<String, Object> metadata = new HashMap<>();
-metadata.put("company", "Acme Inc");
-metadata.put("role", "Developer");
-
-ContactRequest request = new ContactRequest(
-    "user@example.com",
-    "John",
-    "Doe",
-    metadata
-);
-
-try {
-    ContactResponse contact = client.contacts.create("contact_book_id", request);
-    System.out.println("Contact created: " + contact.getId());
-} catch (UnsentException e) {
-    System.err.println("Error: " + e.getMessage());
-}
-```
-
-#### Get Contact
-
-```java
-ContactResponse contact = client.contacts.get("contact_book_id", "contact_id");
-```
-
-#### Update Contact
-
-```java
-Map<String, Object> metadata = new HashMap<>();
-metadata.put("role", "Senior Developer");
-
-ContactRequest updateRequest = new ContactRequest(null, "Jane", null, metadata);
-ContactResponse updated = client.contacts.update("contact_book_id", "contact_id", updateRequest);
-```
-
-#### Upsert Contact
-
-```java
-// Creates if doesn't exist, updates if exists
-ContactRequest request = new ContactRequest(
-    "user@example.com", "John", "Doe", null
-);
-
-ContactResponse result = client.contacts.upsert("contact_book_id", "contact_id", request);
-```
-
-#### Delete Contact
-
-```java
-try {
-    client.contacts.delete("contact_book_id", "contact_id");
-    System.out.println("Contact deleted successfully");
-} catch (UnsentException e) {
-    System.err.println("Error: " + e.getMessage());
-}
-```
-
-### Managing Campaigns
-
-Create and manage email campaigns:
-
-```java
-import dev.unsent.models.CampaignRequest;
-import java.time.Instant;
-
-// Create a campaign
-CampaignRequest campaignRequest = new CampaignRequest(
-    "Welcome Series",
-    "hello@company.com",
-    "Welcome to our platform!",
-    "cb_12345",
-    "<h1>Welcome!</h1><p>Thanks for joining us.</p>",
-    false
-);
-
-try {
-    CampaignResponse campaign = client.campaigns.create(campaignRequest);
-    System.out.println("Campaign created: " + campaign.getId());
-    
-    // Schedule a campaign
-    Instant scheduledTime = Instant.parse("2024-12-01T09:00:00Z");
-    CampaignScheduleRequest scheduleRequest = new CampaignScheduleRequest(
-        scheduledTime.toString(), 1000
-    );
-    
-    client.campaigns.schedule(campaign.getId(), scheduleRequest);
-    System.out.println("Campaign scheduled successfully");
-    
-    // Get campaign details
-    CampaignResponse details = client.campaigns.get(campaign.getId());
-    System.out.println("Campaign status: " + details.getStatus());
-    System.out.println("Total recipients: " + details.getTotal());
-    
-    // Pause a campaign
-    client.campaigns.pause(campaign.getId());
-    System.out.println("Campaign paused successfully");
-    
-    // Resume a campaign
-    client.campaigns.resume(campaign.getId());
-    System.out.println("Campaign resumed successfully");
-    
-} catch (UnsentException e) {
-    System.err.println("Error: " + e.getMessage());
-}
-```
-
-### Error Handling
-
-The SDK throws `UnsentException` for API errors:
-
-```java
-try {
-    EmailResponse response = client.emails.send(request);
-    System.out.println("Email sent: " + response.getId());
-} catch (UnsentException e) {
-    System.err.println("Error " + e.getCode() + ": " + e.getMessage());
-    // Handle error appropriately
-}
-```
-
-### Configuration Options
-
-```java
-// Custom base URL
-UnsentClient client = new UnsentClient("un_xxxx", "https://api.unsent.dev", true);
-
-// Don't raise exceptions (check response status manually)
-UnsentClient client = new UnsentClient("un_xxxx", null, false);
-```
-
-## API Reference
-
-### Client Constructor
-
-- `UnsentClient(String apiKey)` - Initialize with API key
-- `UnsentClient(String apiKey, String baseUrl, boolean raiseOnError)` - Initialize with custom configuration
-- `UnsentClient()` - Initialize using environment variables
-
-### Email Methods
-
-- `client.emails.send(EmailRequest request)` - Send an email
-- `client.emails.batch(List<EmailRequest> emails)` - Send multiple emails in batch (max 100)
-- `client.emails.get(String emailId)` - Get email details
-- `client.emails.update(String emailId, EmailRequest request)` - Update a scheduled email
-- `client.emails.cancel(String emailId)` - Cancel a scheduled email
-
-### Contact Methods
-
-- `client.contacts.create(String bookId, ContactRequest request)` - Create a contact
-- `client.contacts.get(String bookId, String contactId)` - Get contact details
-- `client.contacts.update(String bookId, String contactId, ContactRequest request)` - Update a contact
-- `client.contacts.upsert(String bookId, String contactId, ContactRequest request)` - Upsert a contact
-- `client.contacts.delete(String bookId, String contactId)` - Delete a contact
-
-### Campaign Methods
-
-- `client.campaigns.create(CampaignRequest request)` - Create a campaign
-- `client.campaigns.get(String campaignId)` - Get campaign details
-- `client.campaigns.schedule(String campaignId, CampaignScheduleRequest request)` - Schedule a campaign
-- `client.campaigns.pause(String campaignId)` - Pause a campaign
-- `client.campaigns.resume(String campaignId)` - Resume a campaign
-
-## Features
-
-- 🔐 **Type-safe** - Full Java type safety with strongly typed models
-- ⚡ **Modern** - Built with Java 11+ and modern HTTP practices
-- 📦 **Lightweight** - Minimal dependencies (Gson for JSON)
-- 🔄 **Batch sending** - Send up to 100 emails in a single request
-- ⏰ **Scheduled emails** - Schedule emails for later delivery
-- 🏗️ **Builder Pattern** - Fluent API for request construction
-- 🎯 **Exception Handling** - Comprehensive error handling with custom exceptions
-
-## Requirements
-
-- Java 11 or higher
-- Maven 3.6+ (for Maven projects)
-- Gradle 7+ (for Gradle projects)
 
 ## License
 
 MIT
-
-## Support
-
-- [Documentation](https://docs.unsent.dev)
-- [GitHub Issues](https://github.com/souravsspace/unsent-java/issues)
-- [Discord Community](https://discord.gg/unsent)
-
-## Development
-
-### Building from Source
-
-```bash
-git clone https://github.com/souravsspace/unsent-java.git
-cd unsent-java
-mvn clean install
-```
-
-### Running Tests
-
-```bash
-mvn test
-```
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run tests: `mvn test`
-6. Submit a pull request
