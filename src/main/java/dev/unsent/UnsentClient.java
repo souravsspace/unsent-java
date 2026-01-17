@@ -1,15 +1,13 @@
 package dev.unsent;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import com.google.gson.JsonParser;
+import okhttp3.*;
+import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class UnsentClient {
     private static final String DEFAULT_BASE_URL = "https://api.unsent.dev";
@@ -18,6 +16,7 @@ public class UnsentClient {
     private final String baseUrl;
     private final boolean raiseOnError;
     private final Gson gson;
+    private final OkHttpClient httpClient;
     
     public final EmailsClient emails;
     public final ContactsClient contacts;
@@ -31,6 +30,11 @@ public class UnsentClient {
     public final SettingsClient settings;
     public final WebhooksClient webhooks;
     public final SystemClient system;
+    public final ActivityClient activity;
+    public final EventsClient events;
+    public final MetricsClient metrics;
+    public final StatsClient stats;
+    public final TeamsClient teams;
     
     public UnsentClient(String apiKey) {
         this(apiKey, null, true);
@@ -48,9 +52,18 @@ public class UnsentClient {
         String url = baseUrl != null ? baseUrl : System.getenv("UNSENT_BASE_URL");
         this.baseUrl = (url != null ? url : DEFAULT_BASE_URL) + "/v1";
         this.raiseOnError = raiseOnError;
-        this.gson = new GsonBuilder()
-            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
-            .create();
+        
+        // Use the shared Gson instance with all adapters registered
+        if (JSON.getGson() == null) {
+            JSON.setGson(JSON.createGson().create());
+        }
+        this.gson = JSON.getGson();
+        
+        this.httpClient = new OkHttpClient.Builder()
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .build();
         
         // Initialize resource clients
         this.emails = new EmailsClient(this);
@@ -65,6 +78,11 @@ public class UnsentClient {
         this.settings = new SettingsClient(this);
         this.webhooks = new WebhooksClient(this);
         this.system = new SystemClient(this);
+        this.activity = new ActivityClient(this);
+        this.events = new EventsClient(this);
+        this.metrics = new MetricsClient(this);
+        this.stats = new StatsClient(this);
+        this.teams = new TeamsClient(this);
     }
     
     public UnsentResponse request(String method, String path, Object body) throws UnsentException {
@@ -73,65 +91,77 @@ public class UnsentClient {
 
     public UnsentResponse request(String method, String path, Object body, Map<String, String> headers) throws UnsentException {
         try {
-            URL url = new URL(baseUrl + path);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod(method);
-            conn.setRequestProperty("Authorization", "Bearer " + apiKey);
-            conn.setRequestProperty("Content-Type", "application/json");
-            
+            Request.Builder requestBuilder = new Request.Builder()
+                .url(this.baseUrl + path)
+                .header("Authorization", "Bearer " + apiKey)
+                .header("Content-Type", "application/json");
+
             if (headers != null) {
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    conn.setRequestProperty(entry.getKey(), entry.getValue());
+                    requestBuilder.header(entry.getKey(), entry.getValue());
                 }
             }
-            
+
+            RequestBody requestBody = null;
             if (body != null) {
-                conn.setDoOutput(true);
                 String jsonBody = gson.toJson(body);
-                try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = jsonBody.getBytes(StandardCharsets.UTF_8);
-                    os.write(input, 0, input.length);
-                }
+                requestBody = RequestBody.create(jsonBody, MediaType.parse("application/json; charset=utf-8"));
+            } else if (method.equals("POST") || method.equals("PUT") || method.equals("PATCH")) {
+                requestBody = RequestBody.create("", MediaType.parse("application/json; charset=utf-8"));
             }
+
+            requestBuilder.method(method, requestBody);
             
-            int responseCode = conn.getResponseCode();
-            BufferedReader reader;
-            
-            if (responseCode >= 200 && responseCode < 300) {
-                reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-            } else {
-                reader = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8));
-            }
-            
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                response.append(line);
-            }
-            reader.close();
-            
-            if (responseCode < 200 || responseCode >= 300) {
-                JsonObject errorObj;
-                try {
-                    errorObj = gson.fromJson(response.toString(), JsonObject.class);
-                    if (errorObj.has("error")) {
-                        errorObj = errorObj.getAsJsonObject("error");
-                    }
-                } catch (Exception e) {
-                    errorObj = new JsonObject();
-                    errorObj.addProperty("code", "INTERNAL_SERVER_ERROR");
-                    errorObj.addProperty("message", conn.getResponseMessage());
-                }
+            try (Response response = httpClient.newCall(requestBuilder.build()).execute()) {
+                String responseBodyStr = response.body() != null ? response.body().string() : "{}";
                 
-                if (raiseOnError) {
-                    throw new UnsentException(responseCode, errorObj, method, path);
+                // Try parsing as JSON, handle non-JSON responses gracefully
+                JsonElement jsonElement;
+                try {
+                     jsonElement = JsonParser.parseString(responseBodyStr);
+                } catch (Exception e) {
+                     // Not a JSON response
+                     jsonElement = new JsonObject();
                 }
-                return new UnsentResponse(null, errorObj);
+
+                if (!response.isSuccessful()) {
+                    JsonObject errorObj;
+                    if (jsonElement.isJsonObject()) {
+                        errorObj = jsonElement.getAsJsonObject();
+                        if (errorObj.has("error")) {
+                            JsonElement errorElem = errorObj.get("error");
+                            if (errorElem.isJsonObject()) {
+                                errorObj = errorElem.getAsJsonObject();
+                            }
+                        }
+                    } else {
+                        errorObj = new JsonObject();
+                        errorObj.addProperty("code", "ERROR");
+                        errorObj.addProperty("message", response.message());
+                        errorObj.addProperty("body", responseBodyStr);
+                    }
+
+                    if (raiseOnError) {
+                        throw new UnsentException(response.code(), errorObj, method, path);
+                    }
+                    return new UnsentResponse(null, errorObj);
+                }
+
+                JsonObject data;
+                if (jsonElement.isJsonObject()) {
+                    data = jsonElement.getAsJsonObject();
+                } else if (jsonElement.isJsonArray()) {
+                    // Wrap array in a data object
+                    data = new JsonObject();
+                    data.add("data", jsonElement.getAsJsonArray());
+                } else {
+                    data = new JsonObject();
+                    // Handle primitives if necessary, primarily we expect Object or Array
+                }
+
+                return new UnsentResponse(data, null);
             }
-            
-            JsonObject data = gson.fromJson(response.toString(), JsonObject.class);
-            return new UnsentResponse(data, null);
-            
+
         } catch (UnsentException e) {
             throw e;
         } catch (Exception e) {
@@ -140,6 +170,7 @@ public class UnsentClient {
             error.addProperty("message", e.getMessage());
             
             if (raiseOnError) {
+                // If it's IO exception etc
                 throw new UnsentException(500, error, method, path);
             }
             return new UnsentResponse(null, error);

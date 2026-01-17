@@ -1,8 +1,8 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
-import dev.unsent.types.CreateContactRequest;
-import dev.unsent.types.UpdateContactRequest;
+import dev.unsent.types.Types.CreateContactRequest;
+import dev.unsent.types.Types.UpdateContactRequest;
 
 public class ContactsClient {
     private final UnsentClient client;

@@ -10,46 +10,36 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class AnalyticsTest {
+public class TeamsTest {
 
     @Mock
     private UnsentClient client;
 
-    private AnalyticsClient analytics;
+    private TeamsClient teams;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        analytics = new AnalyticsClient(client);
+        teams = new TeamsClient(client);
     }
 
     @Test
-    public void testGetAnalytics() throws UnsentException {
+    public void testListTeams() throws UnsentException {
         UnsentResponse mockResponse = new UnsentResponse(null, null);
         when(client.get(any())).thenReturn(mockResponse);
 
-        analytics.get();
+        teams.list();
 
-        verify(client).get("/analytics");
+        verify(client).get("/teams");
     }
 
     @Test
-    public void testGetTimeSeries() throws UnsentException {
+    public void testGetTeam() throws UnsentException {
         UnsentResponse mockResponse = new UnsentResponse(null, null);
         when(client.get(any())).thenReturn(mockResponse);
 
-        analytics.getTimeSeries("7d", "d_123");
+        teams.get();
 
-        verify(client).get("/analytics/time-series?days=7d&domain=d_123");
-    }
-
-    @Test
-    public void testGetReputation() throws UnsentException {
-        UnsentResponse mockResponse = new UnsentResponse(null, null);
-        when(client.get(any())).thenReturn(mockResponse);
-
-        analytics.getReputation("d_123");
-
-        verify(client).get("/analytics/reputation?domain=d_123");
+        verify(client).get("/team");
     }
 }

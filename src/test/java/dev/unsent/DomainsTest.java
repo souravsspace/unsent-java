@@ -1,13 +1,12 @@
 package dev.unsent;
 
-import dev.unsent.types.CreateDomainRequest;
+import dev.unsent.types.Types.CreateDomainRequest;
 import dev.unsent.UnsentClient.UnsentResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -75,5 +74,25 @@ public class DomainsTest {
         domains.delete("d_123");
 
         verify(client).delete("/domains/d_123");
+    }
+
+    @Test
+    public void testGetDomainAnalytics() throws UnsentException {
+        UnsentResponse mockResponse = new UnsentResponse(null, null);
+        when(client.get(any())).thenReturn(mockResponse);
+
+        domains.getAnalytics("d_123", "month");
+
+        verify(client).get("/domains/d_123/analytics?period=month");
+    }
+
+    @Test
+    public void testGetDomainStats() throws UnsentException {
+        UnsentResponse mockResponse = new UnsentResponse(null, null);
+        when(client.get(any())).thenReturn(mockResponse);
+
+        domains.getStats("d_123", "2023-01-01", "2023-01-31");
+
+        verify(client).get("/domains/d_123/stats?startDate=2023-01-01&endDate=2023-01-31");
     }
 }

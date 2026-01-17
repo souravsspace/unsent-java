@@ -34,14 +34,16 @@ import dev.unsent.UnsentClient;
 UnsentClient client = new UnsentClient("un_xxxx");
 
 // Or use environment variable UNSENT_API_KEY
-UnsentClient client = new UnsentClient();
+// UnsentClient client = new UnsentClient();
 ```
 
 ### Emails
 
+Send transactional emails and manage your email history.
+
 ```java
-import dev.unsent.types.SendEmailRequest;
-import dev.unsent.types.SendEmailRequestTo;
+import dev.unsent.types.Types.SendEmailRequest;
+import dev.unsent.types.Types.SendEmailRequestTo;
 
 // Send an email
 SendEmailRequest email = new SendEmailRequest()
@@ -64,13 +66,21 @@ client.emails.get("email_id");
 
 // List emails
 client.emails.list(1, 10);
+
+// Get email events
+client.emails.getEvents("email_id");
+
+// Cancel a scheduled email
+client.emails.cancel("email_id");
 ```
 
 ### Contacts & Contact Books
 
+Manage your audience.
+
 ```java
-import dev.unsent.types.CreateContactBookRequest;
-import dev.unsent.types.CreateContactRequest;
+import dev.unsent.types.Types.CreateContactBookRequest;
+import dev.unsent.types.Types.CreateContactRequest;
 
 // Create Contact Book
 CreateContactBookRequest bookReq = new CreateContactBookRequest().name("Newsletter");
@@ -86,12 +96,21 @@ client.contacts.create("contact_book_id", contact);
 
 // List Contacts
 client.contacts.list("contact_book_id");
+
+// Get Contact
+client.contacts.get("contact_book_id", "contact_id");
+
+// Update Contact
+client.contacts.update("contact_book_id", "contact_id", new UpdateContactRequest().firstName("Jane"));
 ```
 
 ### Campaigns
 
+Manage marketing campaigns.
+
 ```java
-import dev.unsent.types.CreateCampaignRequest;
+import dev.unsent.types.Types.CreateCampaignRequest;
+import dev.unsent.types.Types.ScheduleCampaignRequest;
 
 CreateCampaignRequest campaign = new CreateCampaignRequest()
     .name("Weekly Newsletter")
@@ -104,12 +123,18 @@ client.campaigns.create(campaign);
 
 // Schedule Campaign
 client.campaigns.schedule("campaign_id", new ScheduleCampaignRequest().scheduledAt("tomorrow 9am"));
+
+// Pause/Resume Campaign
+client.campaigns.pause("campaign_id");
+client.campaigns.resume("campaign_id");
 ```
 
 ### Domains
 
+Verify and manage your sending domains.
+
 ```java
-import dev.unsent.types.CreateDomainRequest;
+import dev.unsent.types.Types.CreateDomainRequest;
 
 // Create Domain
 client.domains.create(new CreateDomainRequest().name("example.com"));
@@ -119,35 +144,65 @@ client.domains.verify("domain_id");
 
 // List Domains
 client.domains.list();
+
+// Get Domain Analytics
+client.domains.getAnalytics("domain_id", "7d");
 ```
 
-### Helper Clients
+### Webhooks
+
+Manage webhooks for email events.
+
+```java
+import dev.unsent.types.Types.CreateWebhookRequest;
+import java.net.URI;
+import java.util.List;
+
+// Create a webhook using helper method
+client.webhooks.create("https://your-domain.com/webhooks/unsent", List.of("email.sent", "email.delivered"));
+
+// Or using detailed request object
+CreateWebhookRequest req = new CreateWebhookRequest()
+    .url(URI.create("https://your-domain.com/webhooks/unsent"))
+    .eventTypes(List.of(CreateWebhookRequest.EventTypesEnum.SENT, CreateWebhookRequest.EventTypesEnum.DELIVERED));
+    
+client.webhooks.create(req);
+
+// List webhooks
+client.webhooks.list();
+
+// Test webhook
+client.webhooks.test("webhook_id");
+```
+
+### System & Teams
+
+```java
+// Check API Health
+client.system.health();
+
+// Get API Version
+client.system.version();
+
+// Get Current Team Info
+client.teams.get();
+
+// List Teams (if multi-tenant)
+client.teams.list();
+```
+
+### Other Resources
 
 The SDK provides access to all Unsent resources:
 
 - `client.templates` - Manage email templates
-- `client.suppressions` - Manage suppression lists
+- `client.suppressions` - Manage suppression lists (`add`, `delete`, `list`)
 - `client.apiKeys` - Manage API keys programmatically
-- `client.analytics` - internal analytics
-- `client.settings` - internal settings
-- `client.system` - System health check
-
-### Webhooks (Future Feature)
-
-> **Note**: Webhooks are currently a roadmap feature and may not be fully supported by the API yet.
-
-```java
-import java.util.List;
-
-String webhookUrl = "https://your-domain.com/webhooks/unsent";
-List<String> events = List.of("email.sent", "email.delivered");
-
-// Create a webhook
-client.webhooks.create(webhookUrl, events);
-
-// List webhooks
-client.webhooks.list();
-```
+- `client.analytics` - Get aggregated analytics (`get`, `getTimeSeries`, `getReputation`)
+- `client.activity` - Get activity feed (`get`)
+- `client.metrics` - Get system metrics (`get`)
+- `client.stats` - Get system stats (`get`)
+- `client.events` - Query email events (`list`)
 
 ## License
 

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import dev.unsent.UnsentClient.UnsentResponse;
-import dev.unsent.CreateWebhookRequest;
+import dev.unsent.types.Types.CreateWebhookRequest;
 
 import java.util.List;
 
@@ -58,5 +58,31 @@ public class WebhooksTest {
         // Assert
         assertNotNull(response);
         verify(client).get("/webhooks");
+    }
+
+    @Test
+    public void testGetWebhook() throws UnsentException {
+        // Arrange
+        UnsentResponse mockResponse = new UnsentResponse(null, null);
+        when(client.get(any())).thenReturn(mockResponse);
+
+        // Act
+        webhooks.get("wh_123");
+
+        // Assert
+        verify(client).get("/webhooks/wh_123");
+    }
+
+    @Test
+    public void testTestWebhook() throws UnsentException {
+        // Arrange
+        UnsentResponse mockResponse = new UnsentResponse(null, null);
+        when(client.post(any(), any())).thenReturn(mockResponse);
+
+        // Act
+        webhooks.test("wh_123");
+
+        // Assert
+        verify(client).post(eq("/webhooks/wh_123/test"), any());
     }
 }

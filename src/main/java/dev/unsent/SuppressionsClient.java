@@ -1,7 +1,7 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
-import dev.unsent.types.AddSuppressionRequest;
+import dev.unsent.types.Types.AddSuppressionRequest;
 
 public class SuppressionsClient {
     private final UnsentClient client;

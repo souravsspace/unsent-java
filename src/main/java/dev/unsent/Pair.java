@@ -13,7 +13,7 @@
 
 package dev.unsent;
 
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-01-07T19:49:52.238598+06:00[Asia/Dhaka]", comments = "Generator version: 7.18.0")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaClientCodegen", date = "2026-01-17T18:53:14.158545+06:00[Asia/Dhaka]", comments = "Generator version: 7.18.0")
 public class Pair {
   private final String name;
   private final String value;

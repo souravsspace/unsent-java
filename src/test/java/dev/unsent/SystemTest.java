@@ -36,4 +36,18 @@ public class SystemTest {
         assertNotNull(response);
         verify(client).get("/health");
     }
+
+    @Test
+    public void testVersion() throws UnsentException {
+        // Arrange
+        UnsentResponse mockResponse = new UnsentResponse(null, null);
+        when(client.get("/version")).thenReturn(mockResponse);
+
+        // Act
+        UnsentResponse response = system.version();
+
+        // Assert
+        assertNotNull(response);
+        verify(client).get("/version");
+    }
 }

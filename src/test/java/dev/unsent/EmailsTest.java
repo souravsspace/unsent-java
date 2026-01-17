@@ -1,6 +1,6 @@
 package dev.unsent;
 
-import dev.unsent.types.SendEmailRequest;
+import dev.unsent.types.Types.SendEmailRequest;
 import dev.unsent.UnsentClient.UnsentResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,6 +109,16 @@ public class EmailsTest {
         emails.cancel("e_123");
         
         verify(client).post(eq("/emails/e_123/cancel"), any());
+    }
+
+    @Test
+    public void testGetEvents() throws UnsentException {
+        UnsentResponse mockResponse = new UnsentResponse(null, null);
+        when(client.get(any())).thenReturn(mockResponse);
+
+        emails.getEvents("e_123");
+
+        verify(client).get("/emails/e_123/events");
     }
     
     @Test

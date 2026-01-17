@@ -10,46 +10,36 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class AnalyticsTest {
+public class MetricsTest {
 
     @Mock
     private UnsentClient client;
 
-    private AnalyticsClient analytics;
+    private MetricsClient metrics;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        analytics = new AnalyticsClient(client);
+        metrics = new MetricsClient(client);
     }
 
     @Test
-    public void testGetAnalytics() throws UnsentException {
+    public void testGetMetrics() throws UnsentException {
         UnsentResponse mockResponse = new UnsentResponse(null, null);
         when(client.get(any())).thenReturn(mockResponse);
 
-        analytics.get();
+        metrics.get();
 
-        verify(client).get("/analytics");
+        verify(client).get("/metrics");
     }
 
     @Test
-    public void testGetTimeSeries() throws UnsentException {
+    public void testGetMetricsWithPeriod() throws UnsentException {
         UnsentResponse mockResponse = new UnsentResponse(null, null);
         when(client.get(any())).thenReturn(mockResponse);
 
-        analytics.getTimeSeries("7d", "d_123");
+        metrics.get("week");
 
-        verify(client).get("/analytics/time-series?days=7d&domain=d_123");
-    }
-
-    @Test
-    public void testGetReputation() throws UnsentException {
-        UnsentResponse mockResponse = new UnsentResponse(null, null);
-        when(client.get(any())).thenReturn(mockResponse);
-
-        analytics.getReputation("d_123");
-
-        verify(client).get("/analytics/reputation?domain=d_123");
+        verify(client).get("/metrics?period=week");
     }
 }

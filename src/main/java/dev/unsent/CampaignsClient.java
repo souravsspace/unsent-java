@@ -1,8 +1,8 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
-import dev.unsent.types.CreateCampaignRequest;
-import dev.unsent.types.ScheduleCampaignRequest;
+import dev.unsent.types.Types.CreateCampaignRequest;
+import dev.unsent.types.Types.ScheduleCampaignRequest;
 
 public class CampaignsClient {
     private final UnsentClient client;

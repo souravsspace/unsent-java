@@ -10,46 +10,36 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class AnalyticsTest {
+public class ActivityTest {
 
     @Mock
     private UnsentClient client;
 
-    private AnalyticsClient analytics;
+    private ActivityClient activity;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        analytics = new AnalyticsClient(client);
+        activity = new ActivityClient(client);
     }
 
     @Test
-    public void testGetAnalytics() throws UnsentException {
+    public void testGetActivity() throws UnsentException {
         UnsentResponse mockResponse = new UnsentResponse(null, null);
         when(client.get(any())).thenReturn(mockResponse);
 
-        analytics.get();
+        activity.get();
 
-        verify(client).get("/analytics");
+        verify(client).get("/activity");
     }
 
     @Test
-    public void testGetTimeSeries() throws UnsentException {
+    public void testGetActivityWithPagination() throws UnsentException {
         UnsentResponse mockResponse = new UnsentResponse(null, null);
         when(client.get(any())).thenReturn(mockResponse);
 
-        analytics.getTimeSeries("7d", "d_123");
+        activity.get(2, 50);
 
-        verify(client).get("/analytics/time-series?days=7d&domain=d_123");
-    }
-
-    @Test
-    public void testGetReputation() throws UnsentException {
-        UnsentResponse mockResponse = new UnsentResponse(null, null);
-        when(client.get(any())).thenReturn(mockResponse);
-
-        analytics.getReputation("d_123");
-
-        verify(client).get("/analytics/reputation?domain=d_123");
+        verify(client).get("/activity?page=2&limit=50");
     }
 }

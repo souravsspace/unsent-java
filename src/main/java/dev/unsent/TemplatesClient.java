@@ -1,8 +1,8 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
-import dev.unsent.types.CreateTemplateRequest;
-import dev.unsent.types.UpdateTemplateRequest;
+import dev.unsent.types.Types.CreateTemplateRequest;
+import dev.unsent.types.Types.UpdateTemplateRequest;
 
 public class TemplatesClient {
     private final UnsentClient client;

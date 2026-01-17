@@ -10,46 +10,36 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class AnalyticsTest {
+public class StatsTest {
 
     @Mock
     private UnsentClient client;
 
-    private AnalyticsClient analytics;
+    private StatsClient stats;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        analytics = new AnalyticsClient(client);
+        stats = new StatsClient(client);
     }
 
     @Test
-    public void testGetAnalytics() throws UnsentException {
+    public void testGetStats() throws UnsentException {
         UnsentResponse mockResponse = new UnsentResponse(null, null);
         when(client.get(any())).thenReturn(mockResponse);
 
-        analytics.get();
+        stats.get();
 
-        verify(client).get("/analytics");
+        verify(client).get("/stats");
     }
 
     @Test
-    public void testGetTimeSeries() throws UnsentException {
+    public void testGetStatsWithDateRange() throws UnsentException {
         UnsentResponse mockResponse = new UnsentResponse(null, null);
         when(client.get(any())).thenReturn(mockResponse);
 
-        analytics.getTimeSeries("7d", "d_123");
+        stats.get("2023-01-01", "2023-01-31");
 
-        verify(client).get("/analytics/time-series?days=7d&domain=d_123");
-    }
-
-    @Test
-    public void testGetReputation() throws UnsentException {
-        UnsentResponse mockResponse = new UnsentResponse(null, null);
-        when(client.get(any())).thenReturn(mockResponse);
-
-        analytics.getReputation("d_123");
-
-        verify(client).get("/analytics/reputation?domain=d_123");
+        verify(client).get("/stats?startDate=2023-01-01&endDate=2023-01-31");
     }
 }

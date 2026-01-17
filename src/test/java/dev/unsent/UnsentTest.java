@@ -1,7 +1,7 @@
 package dev.unsent;
 
-import dev.unsent.types.SendEmailRequest;
-import dev.unsent.types.CreateContactRequest;
+import dev.unsent.types.Types.SendEmailRequest;
+import dev.unsent.types.Types.CreateContactRequest;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +22,12 @@ public class UnsentTest {
         assertNotNull(client.analytics);
         assertNotNull(client.settings);
         assertNotNull(client.webhooks);
+        assertNotNull(client.system);
+        assertNotNull(client.activity);
+        assertNotNull(client.events);
+        assertNotNull(client.metrics);
+        assertNotNull(client.stats);
+        assertNotNull(client.teams);
     }
 
     @Test

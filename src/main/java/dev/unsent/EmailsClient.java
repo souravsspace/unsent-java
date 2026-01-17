@@ -1,7 +1,7 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
-import dev.unsent.types.SendEmailRequest; // Depending on how generator handled AnyOf, might be needed
+import dev.unsent.types.Types.SendEmailRequest; 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
@@ -95,6 +95,10 @@ public class EmailsClient {
     
     public UnsentResponse cancel(String emailId) throws UnsentException {
         return client.post("/emails/" + emailId + "/cancel", new Object());
+    }
+
+    public UnsentResponse getEvents(String emailId) throws UnsentException {
+        return client.get("/emails/" + emailId + "/events");
     }
 
     // --- Analytics / Lists ---

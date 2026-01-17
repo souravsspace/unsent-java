@@ -1,7 +1,7 @@
 package dev.unsent;
 
 import dev.unsent.UnsentClient.UnsentResponse;
-import dev.unsent.types.CreateApiKeyRequest;
+import dev.unsent.types.Types.CreateApiKeyRequest;
 
 public class ApiKeysClient {
     private final UnsentClient client;

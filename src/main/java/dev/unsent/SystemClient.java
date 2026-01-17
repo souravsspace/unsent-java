@@ -12,4 +12,8 @@ public class SystemClient {
     public UnsentResponse health() throws UnsentException {
         return client.get("/health");
     }
+
+    public UnsentResponse version() throws UnsentException {
+        return client.get("/version");
+    }
 }
